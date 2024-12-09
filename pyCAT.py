@@ -78,11 +78,11 @@ def get_set_temp(s):
             return float(temp_match[0])/1.002
     return None
 
-def run_temp(s, final_temp, ramp_rate, soak_limit):
+def run_temp(file_name, s, final_temp, ramp_rate, soak_limit):
     info_logger.info("Starting temperature profile")
     logged_time = None
     # Overwrite existing temperature.csv
-    with open('20241206_lot_r2_temperature.csv', mode='w', newline='') as file:
+    with open(file_name, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Timestamp', 'Current Temp', 'Set Temp'])
     
@@ -112,7 +112,7 @@ def run_temp(s, final_temp, ramp_rate, soak_limit):
             if new_set_temp is None:
                 new_set_temp = current_temp
             if current_time != logged_time:
-                with open('20241206_lot_r2_temperature.csv', mode='a', newline='') as file:
+                with open(file_name, mode='a', newline='') as file:
                     writer = csv.writer(file)
                     writer.writerow([current_time, f"{current_temp:.2f}", f"{current_set_temp:.2f}"])
                     file.flush()
@@ -145,8 +145,13 @@ def main():
     s = connect_tc()
     if s:
         #set_temp(s, get_temp(s))
-
-        run_temp(s, 650, 5, 5)
+        file_name = input(f"Enter the name for the temperature file (default: '{datetime.now().strftime('%Y%m%d_%H%M%S')}_temperature_name.csv'): ")
+        file_name = datetime.now().strftime('%Y%m%d_%H%M%S_') + "temperature_"  + file_name + ".csv"
+        confirm = input(f"Confirm the filename '{file_name}' (y/n): ").strip().lower()
+        if confirm != 'y':
+            logging.error("Filename not confirmed. Exiting...")
+            return
+        run_temp(file_name, s, 500, 10, 20)
         set_temp(s, 100)
         #print(get_temp(s))
     else:
